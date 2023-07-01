@@ -1,0 +1,14 @@
+:root {
+	font-family: Ubuntu;
+	line-height: 1.5;
+	font-weight: 400;
+
+	color: rgba(255, 255, 255, 0.87);
+	background-color: #1f1f1f;
+}
+
+body {
+	margin: 0;
+	display: flex;
+	justify-content: center;
+}

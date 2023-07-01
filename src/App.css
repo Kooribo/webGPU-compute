@@ -1,0 +1,20 @@
+h1 {
+	font-size: 3.2em;
+	line-height: 1.1;
+	text-align: center;
+}
+
+.card-full {
+	margin-top: 30%;
+	border: 5px solid #242424;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.support-error {
+	text-align: center;
+	color: rgb(192, 97, 97);
+	font-size: large;
+}
