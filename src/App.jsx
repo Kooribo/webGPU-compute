@@ -4,7 +4,7 @@ import WebCompute from "./WebCompute";
 function App() {
 	return (
 		<>
-			<h1>WebGPU - test</h1>
+			<h1>WebGPU - compute</h1>
 			<div className="card-full">
 				{!navigator.gpu ? (
 					<div className="support-error">

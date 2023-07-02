@@ -1,27 +1,32 @@
-import { useRef, useEffect } from "react";
-import "./App.css";
+import { useRef, useEffect, useState } from "react";
+import "./WebCompute.css";
 
 function WebCompute() {
-	// select canvas element
-	const webGpuCanvas = useRef(null);
-
-	// useEffect runs after render
-	useEffect(() => {
-		if (webGpuCanvas != null) {
-			initWebGPU(webGpuCanvas.current);
-		}
-	}, []);
+	const [matrixSize, setMatrixSize] = useState(null);
+	const [calcTime, setCalcTime] = useState(0);
+	const [gpuInfo, setGpuInfo] = useState({});
 
 	/**
-	 * init the webGpu test
+	 * calculate Matrices
 	 */
-	const initWebGPU = async (canvas) => {
+	const calculateMatMult = async () => {
+		var startTime = performance.now();
+
 		if (!navigator.gpu) {
 			throw new Error("WebGPU not supported on this browser.");
 		}
 
-		// get adapter
+		// get adapter, = graphics card
 		const adapter = await navigator.gpu.requestAdapter();
+
+		// your gpu info
+		const adapterInfo = await adapter.requestAdapterInfo();
+		setGpuInfo({
+			architecture: adapterInfo.architecture,
+			description: adapterInfo.description,
+			device: adapterInfo.device,
+			vendor: adapterInfo.vendor,
+		});
 
 		// adapter can be null if GPU does not support WebGPU features
 		if (!adapter) {
@@ -30,11 +35,214 @@ function WebCompute() {
 
 		// get device
 		const device = await adapter.requestDevice();
+
+		// First Matrix
+		const firstMatrix = calculateMatrix();
+
+		const gpuBufferFirstMatrix = device.createBuffer({
+			mappedAtCreation: true,
+			size: firstMatrix.byteLength,
+			usage: GPUBufferUsage.STORAGE,
+		});
+		const arrayBufferFirstMatrix = gpuBufferFirstMatrix.getMappedRange();
+		new Float32Array(arrayBufferFirstMatrix).set(firstMatrix);
+		gpuBufferFirstMatrix.unmap();
+
+		// Second Matrix
+		const secondMatrix = calculateMatrix();
+
+		const gpuBufferSecondMatrix = device.createBuffer({
+			mappedAtCreation: true,
+			size: secondMatrix.byteLength,
+			usage: GPUBufferUsage.STORAGE,
+		});
+		const arrayBufferSecondMatrix = gpuBufferSecondMatrix.getMappedRange();
+		new Float32Array(arrayBufferSecondMatrix).set(secondMatrix);
+		gpuBufferSecondMatrix.unmap();
+
+		// Result Matrix
+		const resultMatrixBufferSize =
+			Float32Array.BYTES_PER_ELEMENT * (2 + firstMatrix[0] * secondMatrix[1]);
+		const resultMatrixBuffer = device.createBuffer({
+			size: resultMatrixBufferSize,
+			usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+		});
+
+		// A bind group layout defines the input/output interface expected by a shader
+		const bindGroupLayout = device.createBindGroupLayout({
+			entries: [
+				{
+					binding: 0,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "read-only-storage",
+					},
+				},
+				{
+					binding: 1,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "read-only-storage",
+					},
+				},
+				{
+					binding: 2,
+					visibility: GPUShaderStage.COMPUTE,
+					buffer: {
+						type: "storage",
+					},
+				},
+			],
+		});
+
+		// A bind group represents the actual input/output data for a shader
+		const bindGroup = device.createBindGroup({
+			layout: bindGroupLayout,
+			entries: [
+				{
+					binding: 0,
+					resource: {
+						buffer: gpuBufferFirstMatrix,
+					},
+				},
+				{
+					binding: 1,
+					resource: {
+						buffer: gpuBufferSecondMatrix,
+					},
+				},
+				{
+					binding: 2,
+					resource: {
+						buffer: resultMatrixBuffer,
+					},
+				},
+			],
+		});
+
+		// compute shader
+		const shaderModule = device.createShaderModule({
+			code: `
+			  struct Matrix {
+				size : vec2f,
+				numbers: array<f32>,
+			  }
+		  
+			  @group(0) @binding(0) var<storage, read> firstMatrix : Matrix;
+			  @group(0) @binding(1) var<storage, read> secondMatrix : Matrix;
+			  @group(0) @binding(2) var<storage, read_write> resultMatrix : Matrix;
+		  
+			  @compute @workgroup_size(8, 8)
+			  fn main(@builtin(global_invocation_id) global_id : vec3u) {
+				// Guard against out-of-bounds work group sizes
+				if (global_id.x >= u32(firstMatrix.size.x) || global_id.y >= u32(secondMatrix.size.y)) {
+				  return;
+				}
+		  
+				resultMatrix.size = vec2(firstMatrix.size.x, secondMatrix.size.y);
+		  
+				let resultCell = vec2(global_id.x, global_id.y);
+				var result = 0.0;
+				for (var i = 0u; i < u32(firstMatrix.size.y); i = i + 1u) {
+				  let a = i + resultCell.x * u32(firstMatrix.size.y);
+				  let b = resultCell.y + i * u32(secondMatrix.size.y);
+				  result = result + firstMatrix.numbers[a] * secondMatrix.numbers[b];
+				}
+		  
+				let index = resultCell.y + resultCell.x * u32(secondMatrix.size.y);
+				resultMatrix.numbers[index] = result;
+			  }
+			`,
+		});
+
+		// pipeline
+		const computePipeline = device.createComputePipeline({
+			layout: device.createPipelineLayout({
+				bindGroupLayouts: [bindGroupLayout],
+			}),
+			compute: {
+				module: shaderModule,
+				entryPoint: "main",
+			},
+		});
+
+		// start encoder
+		const commandEncoder = device.createCommandEncoder();
+
+		const passEncoder = commandEncoder.beginComputePass();
+		passEncoder.setPipeline(computePipeline);
+		passEncoder.setBindGroup(0, bindGroup);
+		const workgroupCountX = Math.ceil(firstMatrix[0] / 8);
+		const workgroupCountY = Math.ceil(secondMatrix[1] / 8);
+		passEncoder.dispatchWorkgroups(workgroupCountX, workgroupCountY);
+		passEncoder.end();
+
+		// Get a GPU buffer for reading in an unmapped state.
+		const gpuReadBuffer = device.createBuffer({
+			size: resultMatrixBufferSize,
+			usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+		});
+
+		// Encode commands for copying buffer to buffer.
+		commandEncoder.copyBufferToBuffer(
+			resultMatrixBuffer /* source buffer */,
+			0 /* source offset */,
+			gpuReadBuffer /* destination buffer */,
+			0 /* destination offset */,
+			resultMatrixBufferSize /* size */
+		);
+
+		// Submit GPU commands.
+		const gpuCommands = commandEncoder.finish();
+		device.queue.submit([gpuCommands]);
+
+		// Read buffer.
+		await gpuReadBuffer.mapAsync(GPUMapMode.READ);
+		const arrayBuffer = gpuReadBuffer.getMappedRange();
+
+		var endTime = performance.now();
+		setCalcTime(endTime - startTime);
+		//console.log(new Float32Array(arrayBuffer));
+	};
+
+	const calculateMatrix = () => {
+		if (matrixSize > 0) {
+			let arrLength = matrixSize * matrixSize + 2;
+			let flArr = new Float32Array(arrLength); //two more for columns and rows number
+			flArr[0] = matrixSize;
+			flArr[1] = matrixSize;
+			for (let i = 2; i < arrLength; i++) {
+				flArr[i] = Math.floor(Math.random() * 10) + 1;
+			}
+			return flArr;
+		}
 	};
 
 	return (
 		<>
-			<canvas ref={webGpuCanvas} width={512} height={512}></canvas>
+			<div className="gpu-info">
+				<div>Architecture: {gpuInfo.architecture}</div>
+				<div>GPU: {gpuInfo.description}</div>
+				<div>Device ID: {gpuInfo.device}</div>
+				<div>Vendor: {gpuInfo.vendor}</div>
+			</div>
+			<br />
+			<div>
+				Matrix size:
+				<input
+					className="matrix-input"
+					type="number"
+					max="600"
+					placeholder="4"
+					onChange={(e) => {
+						setMatrixSize(e.target.value);
+					}}
+				></input>
+				<button className="matrix-button" onClick={calculateMatMult}>
+					Calculate
+				</button>
+			</div>
+			{calcTime && "Calcutation time: " + calcTime.toFixed(2) + " ms"}
 		</>
 	);
 }
