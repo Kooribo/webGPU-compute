@@ -12,3 +12,8 @@ body {
 	display: flex;
 	justify-content: center;
 }
+
+#mycanvas {
+	width: 0px;
+	height: 0px;
+}

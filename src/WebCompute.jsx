@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import "./WebCompute.css";
 import { calculateWebGpu } from "./calculateWebGpu";
 import { calculateCpu } from "./calculateCpu";
-import { calculateWebGl } from "./calculateWebGl";
+//import { calculateWebGl } from "./calculateWebGl";
+import { gpu_matrix } from "./calculateWebGl copyy";
 
 function WebCompute() {
 	const [matrixSize, setMatrixSize] = useState(0);
@@ -50,7 +51,11 @@ function WebCompute() {
 				});
 				break;
 			case "WebGL":
-				setCalcTime(calculateWebGl(firstMatrix, secondMatrix));
+				const [mSize, , ...mmfirst] = firstMatrix;
+				const [, , ...mmsecond] = secondMatrix;
+				const mm1 = gpu_matrix.create(mSize, mSize, new Float32Array(mmfirst));
+				const mm2 = gpu_matrix.create(mSize, mSize, new Float32Array(mmsecond));
+				setCalcTime(mm1.multiply(mm2));
 				break;
 		}
 	};
@@ -66,7 +71,7 @@ function WebCompute() {
 		flArr[0] = mSize;
 		flArr[1] = mSize;
 		for (let i = 2; i < arrLength; i++) {
-			flArr[i] = Math.floor(Math.random() * 10) + 1;
+			flArr[i] = Math.random() * 1; //Math.floor(Math.random() * 10) + 1;
 		}
 		return flArr;
 	};
