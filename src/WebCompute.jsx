@@ -1,10 +1,8 @@
-/* eslint-disable no-undef */
 import { useEffect, useState } from "react";
 import "./WebCompute.css";
 import { calculateWebGpu } from "./calculateWebGpu";
 import { calculateCpu } from "./calculateCpu";
-//import { calculateWebGl } from "./calculateWebGl";
-import { gpu_matrix } from "./calculateWebGl copyy";
+import { Matrix } from "./calculateWebGl";
 
 function WebCompute() {
 	const [matrixSize, setMatrixSize] = useState(0);
@@ -42,21 +40,24 @@ function WebCompute() {
 		const secondMatrix = generateMatrix();
 
 		switch (aMethod) {
-			case "CPU":
+			case "CPU": {
 				setCalcTime(calculateCpu(firstMatrix, secondMatrix));
 				break;
-			case "WebGPU":
+			}
+			case "WebGPU": {
 				calculateWebGpu(firstMatrix, secondMatrix).then((calcTime) => {
 					setCalcTime(calcTime);
 				});
 				break;
-			case "WebGL":
+			}
+			case "WebGL": {
 				const [mSize, , ...mmfirst] = firstMatrix;
 				const [, , ...mmsecond] = secondMatrix;
-				const mm1 = gpu_matrix.create(mSize, mSize, new Float32Array(mmfirst));
-				const mm2 = gpu_matrix.create(mSize, mSize, new Float32Array(mmsecond));
+				const mm1 = new Matrix(mSize, mSize, new Float32Array(mmfirst));
+				const mm2 = new Matrix(mSize, mSize, new Float32Array(mmsecond));
 				setCalcTime(mm1.multiply(mm2));
 				break;
+			}
 		}
 	};
 
