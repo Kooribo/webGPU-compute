@@ -12,8 +12,6 @@ export async function calculateWebGpu(mat1, mat2) {
 	const firstMatrix = mat1;
 	const secondMatrix = mat2;
 
-	var startTime = performance.now();
-
 	// get adapter, = graphics card
 	const adapter = await navigator.gpu.requestAdapter();
 
@@ -181,9 +179,8 @@ export async function calculateWebGpu(mat1, mat2) {
 
 	// Read buffer.
 	await gpuReadBuffer.mapAsync(GPUMapMode.READ);
-	//const solution = new Float32Array(gpuReadBuffer.getMappedRange());
+	const solution = new Float32Array(gpuReadBuffer.getMappedRange());
 	//console.log(solution);
 
-	var endTime = performance.now();
-	return endTime - startTime;
+	return performance.now();
 }

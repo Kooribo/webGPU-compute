@@ -38,24 +38,28 @@ function WebCompute() {
 	const calculateMatMult = (aMethod) => {
 		const firstMatrix = generateMatrix();
 		const secondMatrix = generateMatrix();
+		//const firstMatrix = new Float32Array([3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+		//const secondMatrix = new Float32Array([3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+		var startTime = performance.now();
 
 		switch (aMethod) {
 			case "CPU": {
-				setCalcTime(calculateCpu(firstMatrix, secondMatrix));
+				setCalcTime(calculateCpu(firstMatrix, secondMatrix) - startTime);
 				break;
 			}
 			case "WebGPU": {
 				calculateWebGpu(firstMatrix, secondMatrix).then((calcTime) => {
-					setCalcTime(calcTime);
+					setCalcTime(calcTime - startTime);
 				});
 				break;
 			}
 			case "WebGL": {
-				const [mSize, , ...mmfirst] = firstMatrix;
+				const [mSize, , ...mmfirst] = firstMatrix; // put inside matrix class
 				const [, , ...mmsecond] = secondMatrix;
 				const mm1 = new Matrix(mSize, mSize, new Float32Array(mmfirst));
 				const mm2 = new Matrix(mSize, mSize, new Float32Array(mmsecond));
-				setCalcTime(mm1.multiply(mm2));
+				setCalcTime(mm1.multiply(mm2) - startTime);
 				break;
 			}
 		}
@@ -72,7 +76,7 @@ function WebCompute() {
 		flArr[0] = mSize;
 		flArr[1] = mSize;
 		for (let i = 2; i < arrLength; i++) {
-			flArr[i] = Math.random() * 1; //Math.floor(Math.random() * 10) + 1;
+			flArr[i] = Math.random() * 10 + 1; //Math.floor(Math.random() * 10) + 1;
 		}
 		return flArr;
 	};
@@ -80,18 +84,39 @@ function WebCompute() {
 	return (
 		<>
 			<div className="gpu-info">
-				<div>Architecture: {gpuInfo.architecture}</div>
 				<div>GPU: {gpuInfo.description}</div>
-				<div>Device ID: {gpuInfo.device}</div>
-				<div>Vendor: {gpuInfo.vendor}</div>
+				<div className="gpu-small">
+					<div>Architecture: {gpuInfo.architecture}</div>
+					<div>Device ID: {gpuInfo.device}</div>
+					<div>Vendor: {gpuInfo.vendor}</div>
+				</div>
 			</div>
 			<br />
-			<select value={method} onChange={(e) => setMethod(e.target.value)}>
-				<option value="CPU">CPU</option>
-				<option value="WebGPU">WebGPU</option>
-				<option value="WebGL">WebGL</option>
-			</select>
 			<div>
+				<button
+					className={method == "CPU" ? "select-button active" : "select-button"}
+					onClick={() => setMethod("CPU")}
+				>
+					CPU
+				</button>
+				<button
+					className={
+						method == "WebGPU" ? "select-button active" : "select-button"
+					}
+					onClick={() => setMethod("WebGPU")}
+				>
+					WebGPU
+				</button>
+				<button
+					className={
+						method == "WebGL" ? "select-button active" : "select-button"
+					}
+					onClick={() => setMethod("WebGL")}
+				>
+					WebGL
+				</button>
+			</div>
+			<div className="matrix-info">
 				Matrix size:
 				<input
 					className="matrix-input"
@@ -108,7 +133,9 @@ function WebCompute() {
 					Calculate
 				</button>
 			</div>
-			{"Calcutation time: " + calcTime?.toFixed(2) + " ms"}
+			<span className="material-symbols-outlined">
+				timer {calcTime?.toFixed(2) + " ms"}
+			</span>
 		</>
 	);
 }

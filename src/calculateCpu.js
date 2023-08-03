@@ -1,5 +1,3 @@
- 
-
 /**
  * calculate Matrices CPU
  */
@@ -7,8 +5,6 @@ export function calculateCpu(mat1, mat2) {
 	// generated matrices
 	const firstMatrix = mat1;
 	const secondMatrix = mat2;
-
-	var startTime = performance.now();
 
 	let resultMatrix = new Float32Array(firstMatrix[0] * secondMatrix[1] + 2);
 
@@ -36,6 +32,5 @@ export function calculateCpu(mat1, mat2) {
 
 	//console.log(resultMatrix);
 
-	var endTime = performance.now();
-	return endTime - startTime;
+	return performance.now();
 }

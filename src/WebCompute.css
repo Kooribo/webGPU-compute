@@ -2,14 +2,66 @@
 	width: 100%;
 	display: flex;
 	flex-direction: column;
+	font-size: larger;
+}
+
+.gpu-small {
+	color: rgb(160, 160, 160);
+	font-size: medium;
+}
+
+.select-button {
+	border: none;
+	font-family: Ubuntu;
+	font-size: 24px;
+	border-radius: 6px 6px 0px 0px;
+	height: 50px;
+	width: 200px;
+	transition: transform 0.3s ease;
+}
+
+.select-button:hover {
+	transform: translateY(-5px);
+}
+
+.active {
+	background-color: green;
+	color: white;
+}
+
+.matrix-info {
+	font-family: Ubuntu;
+	font-size: large;
+	margin: 40px;
+	display: flex;
+	align-items: center;
+	flex-grow: 1;
+	gap: 10px;
 }
 
 .matrix-input {
-	margin: 5px;
-	height: 20px;
-	width: 50px;
+	font-family: Ubuntu;
+	font-size: large;
+	height: 40px;
+	width: 75px;
 	text-align: center;
+	border: none;
+	border-radius: 5px;
 }
+
 .matrix-button {
-	height: 26px;
+	font-family: Ubuntu;
+	font-size: large;
+	border: none;
+	margin-left: 30px;
+	width: 150px;
+	height: 35px;
+	border-radius: 12px;
+	background-color: rgb(255, 255, 255);
+	box-shadow: 0 5px 0 rgb(151, 150, 150);
+}
+
+.matrix-button:active {
+	box-shadow: none;
+	transform: translateY(5px);
 }

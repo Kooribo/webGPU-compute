@@ -1,3 +1,7 @@
+/*
+ * Inspired by: https://github.com/watmough/webgl-matrix-demo/blob/master/gpu_matrix.js
+ */
+
 export class Matrix {
 	constructor(r, c, data) {
 		this.r = r;
@@ -22,7 +26,7 @@ export class Matrix {
 		canvas.height = r;
 		canvas.width = c;
 		if (this.__gpumatrix__ === undefined) {
-			console.log("getting webgl");
+			//console.log("getting webgl");
 			// get webgl context
 			this.__gpumatrix__ = canvas.getContext("webgl", {
 				premultipliedAlpha: false,
@@ -39,50 +43,8 @@ export class Matrix {
 			}
 		}
 		// set viewport to rows, columns
-		//console.log("this.__gpumatrix__ " + this.__gpumatrix__);
 		this.__gpumatrix__.viewport(0, 0, c, r);
 		return this.__gpumatrix__;
-	}
-
-	_texelsFromMatrices(m1, m2, r, c) {
-		// dimensions
-		var r1 = m1.r,
-			c1 = m1.c,
-			r2 = m2.r,
-			c2 = m2.c;
-		var r = Math.max(r1, r2);
-		var c = Math.max(c1, c2);
-		var texelcount = r * c;
-		// get texel data (rgb) as a Float32Array
-		var texels = new Float32Array(3 * texelcount);
-		var d1 = m1.data;
-		var d2 = m2.data;
-		// special case if same dimensions
-		if (r1 === r2 && c1 === c2) {
-			// copy m1 to .r and m2 to .g
-			var dst = 0,
-				src1 = 0,
-				src2 = 0;
-			do {
-				texels[dst++] = d1[src1++];
-				texels[dst++] = d2[src2++];
-				dst++;
-			} while (--texelcount);
-		} else {
-			// copy long and short dimensions
-			var row = 0,
-				col = 0;
-			var src1 = 0;
-			do {
-				texels[(row * c1 + col) * 3] = d1[src1++];
-				texels[(col * r2 + row) * 3 + 1] = d2[col * r2 + row];
-				if (col >= c1) {
-					col = 0;
-					row++;
-				}
-			} while (--texelcount);
-		}
-		return texels;
 	}
 
 	// SUPPORTS FLOAT MATRIX -> RGBA BYTE
@@ -95,8 +57,7 @@ export class Matrix {
 		var texels = new Float32Array(buffer);
 		// copy data to Float32Array, ...
 		var dst = 0,
-			src1 = 0,
-			src2 = 0;
+			src1 = 0;
 		do {
 			texels[dst++] = m.data[src1++];
 		} while (--texelcount);
@@ -262,7 +223,6 @@ export class Matrix {
 
 	// multiply m1 x m2
 	_multiply(m1, m2) {
-		var startTime = performance.now();
 		// get the basics up and running
 		var rawbuffer = new ArrayBuffer(m2.c * m1.r * 4);
 		var gl = this._checkinit(m1.r, m2.c);
@@ -290,9 +250,8 @@ export class Matrix {
 		// extract the product and return in new matrix
 		var prod = new Uint8Array(rawbuffer);
 		gl.readPixels(0, 0, m2.c, m1.r, gl.RGBA, gl.UNSIGNED_BYTE, prod);
-		//return gpu_matrix.create(m1.r, m2.c, new Float32Array(rawbuffer));
-		var endTime = performance.now();
-		return endTime - startTime;
+		//console.log(prod);
+		return performance.now();
 	}
 
 	// get shader from script tag
