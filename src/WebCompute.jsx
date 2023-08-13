@@ -45,12 +45,15 @@ function WebCompute() {
 
 		switch (aMethod) {
 			case "CPU": {
-				setCalcTime(calculateCpu(firstMatrix, secondMatrix) - startTime);
+				let endTime = calculateCpu(firstMatrix, secondMatrix);
+				performance.measure("CPU", { start: startTime, end: endTime });
+				setCalcTime(endTime - startTime);
 				break;
 			}
 			case "WebGPU": {
-				calculateWebGpu(firstMatrix, secondMatrix).then((calcTime) => {
-					setCalcTime(calcTime - startTime);
+				calculateWebGpu(firstMatrix, secondMatrix).then((endTime) => {
+					performance.measure("WebGPU", { start: startTime, end: endTime });
+					setCalcTime(endTime - startTime);
 				});
 				break;
 			}
@@ -59,7 +62,9 @@ function WebCompute() {
 				const [, , ...mmsecond] = secondMatrix;
 				const mm1 = new Matrix(mSize, mSize, new Float32Array(mmfirst));
 				const mm2 = new Matrix(mSize, mSize, new Float32Array(mmsecond));
-				setCalcTime(mm1.multiply(mm2) - startTime);
+				let endTime = mm1.multiply(mm2);
+				performance.measure("WebGL", { start: startTime, end: endTime });
+				setCalcTime(endTime - startTime);
 				break;
 			}
 		}
