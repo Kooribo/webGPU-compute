@@ -1,5 +1,5 @@
 /*
- * Inspired by: https://github.com/watmough/webgl-matrix-demo/blob/master/gpu_matrix.js
+ * Source: https://github.com/watmough/webgl-matrix-demo/blob/master/gpu_matrix.js
  */
 
 export class Matrix {

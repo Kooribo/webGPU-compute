@@ -14,10 +14,10 @@ function WebCompute() {
 	useEffect(() => {
 		initAdapter().then((adapterInfo) =>
 			setGpuInfo({
-				architecture: adapterInfo.architecture,
-				description: adapterInfo.description,
-				device: adapterInfo.device,
-				vendor: adapterInfo.vendor,
+				architecture: adapterInfo.architecture || "unknown",
+				description: adapterInfo.description || "unknown",
+				device: adapterInfo.device || "unknown",
+				vendor: adapterInfo.vendor || "unknown",
 			})
 		);
 	}, []);
@@ -81,7 +81,7 @@ function WebCompute() {
 		flArr[0] = mSize;
 		flArr[1] = mSize;
 		for (let i = 2; i < arrLength; i++) {
-			flArr[i] = Math.random() * 10 + 1; //Math.floor(Math.random() * 10) + 1;
+			flArr[i] = Math.random() * 9 + 1; //Math.floor(Math.random() * 10) + 1;
 		}
 		return flArr;
 	};

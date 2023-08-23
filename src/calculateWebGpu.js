@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 
 /**
- * calculate Matrices WebGPU
+ * calculate Matrices WebGPU, source: https://developer.chrome.com/articles/gpu-compute/
  */
 export async function calculateWebGpu(mat1, mat2) {
 	if (!navigator.gpu) {
